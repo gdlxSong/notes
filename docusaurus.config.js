@@ -46,8 +46,6 @@ const config = {
           src: 'images/logo.svg',
         },
         items: [
-          { to: '/getting_started/guide', label: '新手引导', position: 'left' },
-          { to: '/api/Core/tag', label: 'API', position: 'left' },
           {
             href: NotesGitHub,
             position: 'right',
@@ -65,14 +63,6 @@ const config = {
               {
                 label: '痕迹',
                 to: '/',
-              },
-              {
-                label: '概念',
-                to: '/internal_concepts/platform',
-              },
-              {
-                label: '新手引导',
-                to: '/getting_started/guide',
               },
             ],
           },

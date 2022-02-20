@@ -1,4 +1,4 @@
 ---
-title: 简介
+title: 架构
 sidebar_position: 1
 ---

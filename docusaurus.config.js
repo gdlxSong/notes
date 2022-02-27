@@ -8,7 +8,7 @@ const NotesGitHub = 'https://github.com/gdlxSong/notes';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Notes',
+  title: '痕迹',
   tagline: 'Notes are cool',
   url: 'https://notes-io.github.io',
   baseUrl: process.env.NODE_ENV === 'production' ? '/docs/' : '/',
@@ -16,7 +16,7 @@ const config = {
   onBrokenMarkdownLinks: 'warn',
   favicon: 'images/logo.svg',
   organizationName: 'notes-io', // Usually your GitHub org/user name.
-  projectName: 'docs', // Usually your repo name.
+  projectName: 'notes', // Usually your repo name.
   deploymentBranch: 'gh-pages',
 
   presets: [
@@ -40,7 +40,7 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       navbar: {
-        title: 'Notes',
+        title: '痕迹',
         logo: {
           alt: 'Notes',
           src: 'images/logo.svg',

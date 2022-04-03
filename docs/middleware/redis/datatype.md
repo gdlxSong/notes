@@ -8,17 +8,41 @@ sidebar_position: 3
 
 **应用场景：**
 
+- 分布式锁实现，使用SetNX
 - 缓存功能：String字符串是最常用的数据类型，不仅仅是Redis，各个语言都是最基本类型，因此，利用Redis作为缓存，配合其它数据库作为存储层，利用Redis支持高并发的特点，可以大大加快系统的读写速度、以及降低后端数据库的压力。
-- 计数器：许多系统都会使用Redis作为系统的实时计数器，可以快速实现计数和查询的功能。而且最终的数据结果可以按照特定的时间落地到数据库或者其它存储介质当中进行永久保存。
-共享用户Session：用户重新刷新一次界面，可能需要访问一下数据进行重新登录，或者访问页面缓存Cookie，但是可以利用Redis将用户的Session集中管理，在这种模式只需要保证Redis的高可用，每次用户Session的更新和获取都可以快速完成。大大提高效率。
-
-### Hash：
-
-这个是类似 Map 的一种结构，这个一般就是可以将结构化的数据，比如一个对象（前提是这个对象没嵌套其他的对象）给缓存在 Redis 里，然后每次读写缓存的时候，可以就操作 Hash 里的某个字段。
-但是这个的场景其实还是多少单一了一些，因为现在很多对象都是比较复杂的，比如你的商品对象可能里面就包含了很多属性，其中也有对象。我自己使用的场景用得不是那么多。
+- 计数器：redis 命令执行都是原子的，许多系统都会使用Redis作为系统的实时计数器，可以快速实现计数和查询的功能。而且最终的数据结果可以按照特定的时间落地到数据库或者其它存储介质当中进行永久保存。
+- 共享用户Session：用户重新刷新一次界面，可能需要访问一下数据进行重新登录，或者访问页面缓存Cookie，但是可以利用Redis将用户的Session集中管理，在这种模式只需要保证Redis的高可用，每次用户Session的更新和获取都可以快速完成。大大提高效率。
 
 
 ### List：
+
+
+```c
+/* Node, List, and Iterator are the only data structures used currently. */
+
+typedef struct listNode {
+    struct listNode *prev;
+    struct listNode *next;
+    void *value;
+} listNode;
+
+typedef struct listIter {
+    listNode *next;
+    int direction;
+} listIter;
+
+typedef struct list {
+    listNode *head;
+    listNode *tail;
+    void *(*dup)(void *ptr);
+    void (*free)(void *ptr);
+    int (*match)(void *ptr, void *key);
+    unsigned long len;
+} list;
+```
+
+
+
 
 List 是有序列表，这个还是可以玩儿出很多花样的。
 比如可以通过 List 存储一些列表型的数据结构，类似粉丝列表、文章的评论列表之类的东西。
@@ -29,6 +53,138 @@ List本身就是我们在开发过程中比较常用的数据结构了，热点�
 消息队列：Redis的链表结构，可以轻松实现阻塞队列，可以使用左进右出的命令组成来完成队列的设计。比如：数据的生产者可以通过Lpush命令从左边插入数据，多个数据消费者，可以使用BRpop命令阻塞的“抢”列表尾部的数据。
 文章列表或者数据分页展示的应用。
 比如，我们常用的博客网站的文章列表，当用户量越来越多时，而且每一个用户都有自己的文章列表，而且当文章多时，都需要分页展示，这时可以考虑使用Redis的列表，列表不但有序同时还支持按照范围内获取元素，可以完美解决分页查询功能。大大提高查询效率。
+
+
+
+### Hash：
+
+redis 的 hash 实现基本和 `java HashTable` 实现一致。
+
+![redis-data-hash](/images/redis-data-hash.jpg)
+
+
+
+```c
+// hash table 定义
+typedef struct dictht {
+    // 哈希表数组
+    dictEntry **table;
+    // 哈希表大小
+    unsigned long size;
+    // 哈希表大小掩码，用于计算索引值，总是等于 size - 1
+    unsigned long sizemask;
+    // 该哈希表已有节点的数量
+    unsigned long used;
+} dictht;
+
+// 字典定义
+typedef struct dict {
+    dictType *type;
+    void *privdata;
+    // 内部有两个 dictht 结构
+    dictht ht[2];
+    long rehashidx; /* rehashing not in progress if rehashidx == -1 */
+    unsigned long iterators; /* number of iterators currently running */
+} dict;
+
+// 字典元素类型数据定义
+typedef struct dictEntry {
+  	// 无类型指针，Key指向Val值
+    void *key;
+    // 值，是一个公用体,他有可能是一个指针，或者一个64位正整数，或者64位int，浮点数
+    union {
+       	// 值指针
+        void *val;
+      	// 64位正整数
+        uint64_t u64;
+      	// 64位int
+        int64_t s64;
+      	// 浮点数
+        double d;
+    } v;
+  	// next节点，每一个dictEntry都是一个链表，用于处理Hash冲突
+    struct dictEntry *next;
+} dictEntry;
+```
+
+
+#### redis hash 通过链式地址解决hash碰撞
+
+```c
+/* 添加一个元素到目标哈希表 */
+int dictAdd(dict *d, void *key, void *val)
+{
+  	// 向字典中添加key
+    dictEntry *entry = dictAddRaw(d,key,NULL);
+
+    if (!entry) return DICT_ERR;
+  	// 然后设置节点的值
+    dictSetVal(d, entry, val);
+    return DICT_OK;
+}
+
+
+/* 低级添加或查找:
+ * 此函数添加了元素，但不是设置值而是将dictEntry结构返回给用户，这将确保按需填写值字段.
+ *
+ * 此函数也直接公开给要调用的用户API主要是为了在哈希值内部存储非指针，例如:
+ * entry = dictAddRaw(dict,mykey,NULL);
+ * if (entry != NULL) dictSetSignedIntegerVal(entry,1000);
+ * 
+ * 返回值:
+ *
+ * 如果键已经存在，则返回NULL，如果不存在，则使用现有条目填充“ * existing”.
+ * 如果添加了键，则哈希条目将返回以由调用方进行操作。
+ */
+dictEntry *dictAddRaw(dict *d, void *key, dictEntry **existing)
+{
+    long index;
+    dictEntry *entry;
+    dictht *ht;
+	// 判断是否正在ReHash，如果需要则调用_dictRehashStep（后续ReHash中的步骤），每次ReHash一条数据，直到完成整个ReHash
+    if (dictIsRehashing(d)) _dictRehashStep(d);
+
+    /* 获取新元素的索引,根据Key计算索引，并且判断是否需要进行扩容ReHash(！！！重点)（第一次ReHash调用） */
+    if ((index = _dictKeyIndex(d, key, dictHashKey(d,key), existing)) == -1)
+        return NULL;
+
+  	/* 解决Hash冲突，以及ReHash时效率问题 */
+    /* 分配内存并存储新条目。假设在数据库系统中更有可能更频繁地访问最近添加的条目，则将元素插入顶部 */
+  	// 判断是否需要ReHash，如果是那么当前的HashTable为字典下的第二个，如果不需要扩容则使用原来的的
+    ht = dictIsRehashing(d) ? &d->ht[1] : &d->ht[0];
+    // 创建元素,分配内存
+    entry = zmalloc(sizeof(*entry));
+  	// 进行元素链表操作，元素的下一个节点指向Hash表中的相应索引，如果以前这个下标有元素则链到当前元素后面
+    entry->next = ht->table[index];
+  	// Hash表节点索引设置为自己，替换原来的元素
+    ht->table[index] = entry;
+    ht->used++;
+
+    /* 设置这个Hash元素的Key. */
+    dictSetKey(d, entry, key);
+    return entry;
+}
+```
+
+
+
+指的注意的即是上面的代码片段中 `ht->table[index] = entry;` 使用链表头插法来实现 kv 的设置，确实是挺高效的，其次对于从hash中查询key，而言首先通过hash得到 hash table 的index，然后遍历链表，得到返回值， 这里hash table 中的链表长度不均匀可能会导致 hash 查询效率下降，但是我们却可以根据 hash 当前状态对hash table 进行rehash，妙极！
+
+> 其实可以通过， hash table 中的元素数量和hash table的占用情况来决定是否进行rehash。
+
+
+**渐进式rehash：**
+
+redis 的 hash 扩容也是挺有意思的一件事儿，大字典的扩容是比较耗时间的，需要重新申请新的数组，然后将旧字典所有链表中的元素重新挂接到新的数组下面，这是一个 O(n) 级别的操作，作为单线程的 Redis 很难承受这样耗时的过程，所以 Redis 使用 渐进式 rehash 小步搬迁。
+
+
+
+
+
+这个是类似 Map 的一种结构，这个一般就是可以将结构化的数据，比如一个对象（前提是这个对象没嵌套其他的对象）给缓存在 Redis 里，然后每次读写缓存的时候，可以就操作 Hash 里的某个字段。
+但是这个的场景其实还是多少单一了一些，因为现在很多对象都是比较复杂的，比如你的商品对象可能里面就包含了很多属性，其中也有对象。我自己使用的场景用得不是那么多。
+
+
 
 ### Set：
 

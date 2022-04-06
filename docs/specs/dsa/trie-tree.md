@@ -1,6 +1,6 @@
 ---
 title: 前缀树
-sidebar_position: 25
+sidebar_position: 3
 ---
 
 

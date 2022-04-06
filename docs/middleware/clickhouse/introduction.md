@@ -7,5 +7,5 @@ sidebar_position: 1
 
 
 
-> 中文社区： https://elasticsearch.cn/
+> 中文社区： https://clickhouse.com/docs/zh/engines/database-engines/mysql/
 

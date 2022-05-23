@@ -28,6 +28,7 @@ sudo apt-get -y update
 sudo apt-get -y install docker-ce
 
 注意：其他注意事项在下面的注释中
+
 # 安装指定版本的Docker-CE:
 # Step 1: 查找Docker-CE的版本:
 # apt-cache madison docker-ce

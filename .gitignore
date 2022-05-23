@@ -1,6 +1,8 @@
 # Dependencies
 /node_modules
 
+docs/specs/ah
+
 # Yarn
 .pnp.*
 .yarn/*

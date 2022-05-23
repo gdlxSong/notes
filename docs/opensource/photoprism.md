@@ -1,5 +1,5 @@
 ---
-title: 简介
+title: Photoprism
 sidebar_position: 3
 ---
 

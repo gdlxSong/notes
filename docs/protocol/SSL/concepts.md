@@ -1,22 +1,9 @@
 ---
-title: "ssl术语简介"
-date: 2020-04-25T14:41:17+08:00
-lastmod: 2020-04-25T14:41:17+08:00
-description: ""
-tags: ["ssl/tls"]
-categories: [ssl]
-author: "xGdl"
-comment: true
-toc: true
-autoCollapseToc: true
-postMetaInFooter: false
-hiddenFromHomePage: false
-contentCopyright: true
-reward: true
-mathjax: true
-mathjaxEnableSingleDollar: false
-mathjaxEnableAutoNumber: false
+title: 概念
+sidebar_position: 2
 ---
+
+
 
 
 ## 加密算法分类：

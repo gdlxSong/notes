@@ -18,5 +18,4 @@ docker run -d \
   -v /photoprism/storage \
   -v ~/Pictures:/photoprism/originals \
   photoprism/photoprism
-
 ```

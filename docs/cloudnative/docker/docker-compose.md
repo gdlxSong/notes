@@ -21,6 +21,9 @@ Compose 文件是一个 YAML 文件，它定义了 `version (DEPRECATED)`, `serv
 
 多个 Compose 文件可以组合在一起来定义应用程序模型。 YAML 文件的组合必须通过基于用户设置的 Compose 文件顺序附加/覆盖 YAML 元素来实现。简单的属性和地图被最高阶的 Compose 文件覆盖，列表通过附加来合并。每当要合并的免费文件托管在其他文件夹中时，必须根据第一个 Compose 文件的父文件夹解析相对路径。
 
+
+
+
 由于某些 Compose 文件元素既可以表示为单个字符串也可以表示为复杂对象，因此合并必须适用于扩展形式。
 
 
@@ -178,3 +181,29 @@ networks:
 
 
 
+
+
+
+{
+  "apps": [
+    {
+      "name": "frpc", 
+      "script": "frpc -c /usr/local/frp/frpc.ini", 
+      "env": {
+        "NODE_ENV": "dev"
+      },
+      "env_production": {
+        "NODE_ENV": "production"
+      },
+      "instances": 1,
+      "exec_mode": "fork", 
+      "max_restarts" : 30, 
+      "restart_delay" : 5000, 
+      "log_date_format" : "YYYY-MM-DD HH:mm Z",
+      "combine_logs" : true,
+      "log_file": "/var/pm2/frp/error.log", 
+      "out_file": "/var/pm2/frp/stdout.log",
+      "error_file": "/var/pm2/frp/error.log",
+    }
+  ]
+}
